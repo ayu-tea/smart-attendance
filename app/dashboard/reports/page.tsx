@@ -6,11 +6,13 @@ import {
   ChevronRight,
   Download,
   TrendingUp,
+  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/dashboard/page-header'
+import { FaceStatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -31,7 +33,7 @@ import { departments, reportRecords, students } from '@/lib/mock-data'
 const RECORDS_PER_PAGE = 10
 const LOW_ATTENDANCE_LIMIT = 75
 
-type ReportView = 'classes' | 'low-attendance'
+type ReportView = 'all-students' | 'classes' | 'low-attendance'
 
 interface ClassSummary {
   id: string
@@ -54,28 +56,30 @@ function SummaryCard({
   value: string | number
   icon: LucideIcon
   active: boolean
-  accent: 'primary' | 'destructive'
+  accent: 'primary' | 'destructive' | 'muted'
   onClick: () => void
 }) {
   const accentClass =
     accent === 'primary'
       ? 'bg-primary/12 text-primary'
-      : 'bg-destructive/12 text-destructive'
+      : accent === 'destructive'
+        ? 'bg-destructive/12 text-destructive'
+        : 'bg-muted text-muted-foreground'
 
   return (
-    <button type="button" onClick={onClick} className="text-left">
+    <button type="button" onClick={onClick} className="h-full text-left">
       <Card
         className={cn(
-          'transition-colors hover:border-primary/40',
+          'h-full transition-colors hover:border-primary/40',
           active && 'border-primary/60 bg-primary/5',
         )}
       >
         <CardContent className="flex items-start justify-between gap-4 p-5">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">{label}</p>
+          <div className="flex min-w-0 flex-col gap-2">
+            <p className="truncate text-sm text-muted-foreground">{label}</p>
             <p className="text-3xl font-semibold tracking-tight">{value}</p>
           </div>
-          <span className={cn('flex size-11 items-center justify-center rounded-lg', accentClass)}>
+          <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-lg', accentClass)}>
             <Icon className="size-5" />
           </span>
         </CardContent>
@@ -87,8 +91,13 @@ function SummaryCard({
 export default function ReportsPage() {
   const [date, setDate] = useState('')
   const [dept, setDept] = useState('all')
+  const [year, setYear] = useState('all')
   const [page, setPage] = useState(1)
-  const [view, setView] = useState<ReportView>('classes')
+  const [view, setView] = useState<ReportView>('all-students')
+
+  const years = useMemo(() => {
+    return Array.from(new Set(students.map((student) => student.year)))
+  }, [])
 
   const classSummaries = useMemo<ClassSummary[]>(() => {
     const grouped = new Map<string, ClassSummary>()
@@ -128,6 +137,14 @@ export default function ReportsPage() {
       .sort((a, b) => a.attendance - b.attendance)
   }, [])
 
+  const filteredAllStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesDept = dept === 'all' || student.department === dept
+      const matchesYear = year === 'all' || student.year === year
+      return matchesDept && matchesYear
+    })
+  }, [dept, year])
+
   const filteredClasses = useMemo(() => {
     return classSummaries.filter((record) => {
       const matchesDate = !date || record.date === date
@@ -139,12 +156,24 @@ export default function ReportsPage() {
   const filteredLowAttendance = useMemo(() => {
     return lowAttendanceStudents.filter((student) => {
       const matchesDept = dept === 'all' || student.department === dept
-      return matchesDept
+      const matchesYear = year === 'all' || student.year === year
+      return matchesDept && matchesYear
     })
-  }, [lowAttendanceStudents, dept])
+  }, [lowAttendanceStudents, dept, year])
 
-  const activeRecords = view === 'classes' ? filteredClasses : filteredLowAttendance
+  const activeRecords =
+    view === 'all-students'
+      ? filteredAllStudents
+      : view === 'classes'
+        ? filteredClasses
+        : filteredLowAttendance
+
   const totalPages = Math.max(1, Math.ceil(activeRecords.length / RECORDS_PER_PAGE))
+
+  const paginatedAllStudents = useMemo(() => {
+    const start = (page - 1) * RECORDS_PER_PAGE
+    return filteredAllStudents.slice(start, start + RECORDS_PER_PAGE)
+  }, [filteredAllStudents, page])
 
   const paginatedClasses = useMemo(() => {
     const start = (page - 1) * RECORDS_PER_PAGE
@@ -163,11 +192,15 @@ export default function ReportsPage() {
   function clearFilters() {
     setDate('')
     setDept('all')
+    setYear('all')
     setPage(1)
   }
 
   function changeView(nextView: ReportView) {
     setView(nextView)
+    setDate('')
+    setDept('all')
+    setYear('all')
     setPage(1)
   }
 
@@ -178,15 +211,8 @@ export default function ReportsPage() {
         : ['Student ID', 'Student Name', 'Department', 'Year', 'Attendance %', 'Face Status']
 
     const rows =
-      view === 'classes'
-        ? filteredClasses.map((record) => [
-            record.date,
-            record.department,
-            record.present,
-            record.absent,
-            record.total,
-          ])
-        : filteredLowAttendance.map((student) => [
+      view === 'all-students'
+        ? filteredAllStudents.map((student) => [
             student.id,
             student.name,
             student.department,
@@ -194,6 +220,22 @@ export default function ReportsPage() {
             student.attendance,
             student.faceStatus,
           ])
+        : view === 'classes'
+          ? filteredClasses.map((record) => [
+              record.date,
+              record.department,
+              record.present,
+              record.absent,
+              record.total,
+            ])
+          : filteredLowAttendance.map((student) => [
+              student.id,
+              student.name,
+              student.department,
+              student.year,
+              student.attendance,
+              student.faceStatus,
+            ])
 
     const csvContent = [
       headers.join(','),
@@ -220,11 +262,18 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url)
   }
 
+  const currentCount =
+    view === 'all-students'
+      ? paginatedAllStudents.length
+      : view === 'classes'
+        ? paginatedClasses.length
+        : paginatedLowAttendance.length
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Attendance Reports"
-        description="View class summaries and low-attendance student details."
+        description="View all students, class summaries, or low-attendance details."
         action={
           <Button size="lg" className="gap-2" onClick={exportReport}>
             <Download className="size-4" />
@@ -233,7 +282,16 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-3 gap-4">
+        <SummaryCard
+          label="All Students"
+          value={students.length}
+          icon={Users}
+          active={view === 'all-students'}
+          accent="muted"
+          onClick={() => changeView('all-students')}
+        />
+
         <SummaryCard
           label="Classes Held"
           value={classSummaries.length}
@@ -290,6 +348,27 @@ export default function ReportsPage() {
               </Select>
             </div>
 
+            {view !== 'classes' && (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="f-year">Year</Label>
+                <Select
+                  id="f-year"
+                  value={year}
+                  onChange={(e) => {
+                    setYear(e.target.value)
+                    resetToFirstPage()
+                  }}
+                >
+                  <option value="all">All Years</option>
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+
             <div className="flex items-end">
               <Button variant="outline" size="lg" className="w-full" onClick={clearFilters}>
                 Clear Filters
@@ -297,7 +376,51 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {view === 'classes' ? (
+          {view === 'all-students' ? (
+            <TableContainer>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Student ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Department</TableHead>
+                    <TableHead className="hidden sm:table-cell">Year</TableHead>
+                    <TableHead>Attendance %</TableHead>
+                    <TableHead>Face Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {paginatedAllStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {student.id}
+                      </TableCell>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="hidden text-muted-foreground md:table-cell">
+                        {student.department}
+                      </TableCell>
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
+                        {student.year}
+                      </TableCell>
+                      <TableCell>{student.attendance}%</TableCell>
+                      <TableCell>
+                        <FaceStatusBadge status={student.faceStatus} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                  {filteredAllStudents.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                        No students match your filters.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : view === 'classes' ? (
             <TableContainer>
               <Table>
                 <TableHeader>
@@ -366,13 +489,7 @@ export default function ReportsPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {student.faceStatus === 'registered' ? (
-                          <span className="text-sm text-primary">Registered</span>
-                        ) : student.faceStatus === 'pending' ? (
-                          <span className="text-sm text-warning">Pending</span>
-                        ) : (
-                          <span className="text-sm text-destructive">Not Registered</span>
-                        )}
+                        <FaceStatusBadge status={student.faceStatus} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -391,9 +508,7 @@ export default function ReportsPage() {
 
           <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              Showing{' '}
-              {view === 'classes' ? paginatedClasses.length : paginatedLowAttendance.length} of{' '}
-              {activeRecords.length} records
+              Showing {currentCount} of {activeRecords.length} records
             </p>
 
             <div className="flex items-center gap-2">
