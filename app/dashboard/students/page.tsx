@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/dashboard/page-header'
@@ -22,12 +22,15 @@ import { Select } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { departments, students as initialStudents, years, type Student } from '@/lib/mock-data'
 
+const STUDENTS_PER_PAGE = 5
+
 export default function StudentsPage() {
   const [studentList, setStudentList] = useState<Student[]>(initialStudents)
   const [query, setQuery] = useState('')
   const [dept, setDept] = useState('all')
   const [year, setYear] = useState('all')
   const [open, setOpen] = useState(false)
+  const [page, setPage] = useState(1)
 
   const [form, setForm] = useState({
     id: '',
@@ -46,6 +49,17 @@ export default function StudentsPage() {
       return matchesQuery && matchesDept && matchesYear
     })
   }, [query, dept, year, studentList])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / STUDENTS_PER_PAGE))
+
+  const paginatedStudents = useMemo(() => {
+    const start = (page - 1) * STUDENTS_PER_PAGE
+    return filtered.slice(start, start + STUDENTS_PER_PAGE)
+  }, [filtered, page])
+
+  function resetToFirstPage() {
+    setPage(1)
+  }
 
   function handleAddStudent(e: React.FormEvent) {
     e.preventDefault()
@@ -68,6 +82,7 @@ export default function StudentsPage() {
       department: departments[0],
       year: years[0],
     })
+    setPage(1)
     setOpen(false)
   }
 
@@ -75,7 +90,7 @@ export default function StudentsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Student Management"
-        description="Search, filter, and manage all enrolled students."
+        description="Recently added students appear first."
         action={
           <Button size="lg" className="gap-2" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
@@ -92,7 +107,10 @@ export default function StudentsPage() {
               <Input
                 placeholder="Search by name or student ID…"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  resetToFirstPage()
+                }}
                 className="pl-9"
               />
             </div>
@@ -101,7 +119,10 @@ export default function StudentsPage() {
               <SlidersHorizontal className="hidden size-4 sm:block" />
               <Select
                 value={dept}
-                onChange={(e) => setDept(e.target.value)}
+                onChange={(e) => {
+                  setDept(e.target.value)
+                  resetToFirstPage()
+                }}
                 className="w-full min-w-40 sm:w-auto"
               >
                 <option value="all">All Departments</option>
@@ -114,7 +135,10 @@ export default function StudentsPage() {
 
               <Select
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => {
+                  setYear(e.target.value)
+                  resetToFirstPage()
+                }}
                 className="w-full min-w-32 sm:w-auto"
               >
                 <option value="all">All Years</option>
@@ -141,7 +165,7 @@ export default function StudentsPage() {
               </TableHeader>
 
               <TableBody>
-                {filtered.map((student) => (
+                {paginatedStudents.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell className="font-mono text-xs text-muted-foreground">
                       {student.id}
@@ -188,9 +212,39 @@ export default function StudentsPage() {
             </Table>
           </TableContainer>
 
-          <p className="text-xs text-muted-foreground">
-            Showing {filtered.length} of {studentList.length} students
-          </p>
+          <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Showing {paginatedStudents.length} of {filtered.length} students
+            </p>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={page === 1}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              >
+                <ChevronLeft className="size-4" />
+                Previous
+              </Button>
+
+              <span className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={page === totalPages}
+                onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              >
+                Next
+                <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
