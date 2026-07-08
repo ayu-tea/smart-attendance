@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Building2, CheckCircle2, Clock, Save, ScanFace } from 'lucide-react'
+import { CheckCircle2, Mail, Power, Save, UserRound } from 'lucide-react'
 import { useState } from 'react'
 
 import { PageHeader } from '@/components/dashboard/page-header'
@@ -9,13 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { departments } from '@/lib/mock-data'
 
 export default function SettingsPage() {
-  const [sensitivity, setSensitivity] = useState(75)
-  const [notify, setNotify] = useState(true)
+  const [attendanceOpen, setAttendanceOpen] = useState(false)
   const [saved, setSaved] = useState(false)
 
   function handleSave() {
@@ -23,13 +21,11 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2200)
   }
 
-  const sensitivityLabel = sensitivity >= 80 ? 'High' : sensitivity >= 55 ? 'Balanced' : 'Relaxed'
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Settings"
-        description="Configure your institution profile and recognition preferences."
+        description="Manage faculty profile and attendance acceptance status."
         action={
           <Button size="lg" className="gap-2" onClick={handleSave}>
             {saved ? <CheckCircle2 className="size-4" /> : <Save className="size-4" />}
@@ -39,123 +35,124 @@ export default function SettingsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Institution profile */}
         <Card>
           <CardHeader className="flex-row items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
-              <Building2 className="size-5" />
+              <UserRound className="size-5" />
             </span>
-            <CardTitle>Institution Profile</CardTitle>
+            <CardTitle>Faculty Profile</CardTitle>
           </CardHeader>
+
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inst-name">Institution name</Label>
-              <Input id="inst-name" defaultValue="Springfield University" />
+              <Label htmlFor="faculty-name">Faculty name</Label>
+              <Input id="faculty-name" defaultValue="Dr. Neha Kulkarni" />
             </div>
+
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inst-email">Contact email</Label>
-              <Input id="inst-email" type="email" defaultValue="admin@springfield.edu" />
+              <Label htmlFor="faculty-id">Faculty ID</Label>
+              <Input id="faculty-id" defaultValue="FAC-001" />
             </div>
+
             <div className="flex flex-col gap-2">
-              <Label htmlFor="inst-dept">Primary department</Label>
-              <Select id="inst-dept" defaultValue={departments[0]}>
-                {departments.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
+              <Label htmlFor="faculty-email">Email</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="faculty-email"
+                  type="email"
+                  defaultValue="faculty@institution.edu"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="faculty-role">Role</Label>
+              <Select id="faculty-role" defaultValue="faculty">
+                <option value="faculty">Faculty</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Administrator</option>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="faculty-dept">Department</Label>
+              <Select id="faculty-dept" defaultValue={departments[0]}>
+                {departments.map((department) => (
+                  <option key={department} value={department}>
+                    {department}
                   </option>
                 ))}
               </Select>
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="inst-address">Address</Label>
-              <Textarea id="inst-address" defaultValue="742 Evergreen Terrace, Springfield" />
-            </div>
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
-          {/* Attendance timing */}
-          <Card>
-            <CardHeader className="flex-row items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                <Clock className="size-5" />
-              </span>
-              <CardTitle>Attendance Timing</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="start">Session start</Label>
-                  <Input id="start" type="time" defaultValue="09:00" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="end">Session end</Label>
-                  <Input id="end" type="time" defaultValue="17:00" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="grace">Late grace period (minutes)</Label>
-                <Input id="grace" type="number" defaultValue={10} min={0} />
-              </div>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader className="flex-row items-center gap-3">
+            <span
+              className={cn(
+                'flex size-9 items-center justify-center rounded-lg',
+                attendanceOpen
+                  ? 'bg-primary/12 text-primary'
+                  : 'bg-muted text-muted-foreground',
+              )}
+            >
+              <Power className="size-5" />
+            </span>
+            <CardTitle>Attendance Acceptance</CardTitle>
+          </CardHeader>
 
-          {/* Recognition sensitivity */}
-          <Card>
-            <CardHeader className="flex-row items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                <ScanFace className="size-5" />
-              </span>
-              <CardTitle>Face Recognition</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-5">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="sensitivity">Recognition sensitivity</Label>
-                  <span className="rounded-full bg-primary/12 px-2.5 py-0.5 text-xs font-medium text-primary">
-                    {sensitivityLabel} · {sensitivity}%
-                  </span>
+          <CardContent className="flex flex-col gap-5">
+            <div className="rounded-xl border border-border bg-muted/20 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium">Accept attendance manually</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Turn this on when students are allowed to mark attendance for the current
+                    session.
+                  </p>
                 </div>
-                <input
-                  id="sensitivity"
-                  type="range"
-                  min={30}
-                  max={100}
-                  value={sensitivity}
-                  onChange={(e) => setSensitivity(Number(e.target.value))}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Higher sensitivity reduces false matches but may require clearer captures.
-                </p>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => setNotify((v) => !v)}
-                className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3 text-left"
-              >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <Bell className="size-4 text-muted-foreground" />
-                  Notify on unrecognized faces
-                </span>
-                <span
+                <button
+                  type="button"
+                  onClick={() => setAttendanceOpen((value) => !value)}
                   className={cn(
-                    'relative h-6 w-11 rounded-full transition-colors',
-                    notify ? 'bg-primary' : 'bg-muted-foreground/40',
+                    'relative h-8 w-14 shrink-0 rounded-full transition-colors',
+                    attendanceOpen ? 'bg-primary' : 'bg-muted-foreground/35',
                   )}
+                  aria-label="Toggle attendance acceptance"
                 >
                   <span
                     className={cn(
-                      'absolute top-0.5 size-5 rounded-full bg-background transition-transform',
-                      notify ? 'translate-x-5' : 'translate-x-0.5',
+                      'absolute left-1 top-1 size-6 rounded-full bg-white shadow-sm transition-transform',
+                      attendanceOpen ? 'translate-x-6' : 'translate-x-0',
                     )}
                   />
-                </span>
-              </button>
-            </CardContent>
-          </Card>
-        </div>
+                </button>
+              </div>
+
+              <div
+                className={cn(
+                  'mt-5 rounded-lg border px-4 py-3 text-sm font-medium',
+                  attendanceOpen
+                    ? 'border-primary/25 bg-primary/10 text-primary'
+                    : 'border-border bg-background/40 text-muted-foreground',
+                )}
+              >
+                {attendanceOpen
+                  ? 'Attendance acceptance is ON. Students can be marked present.'
+                  : 'Attendance acceptance is OFF. Attendance marking is currently closed.'}
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              This setting is manual for now. Later, the backend can store this status per faculty,
+              subject, class, or session.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
