@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Search, SlidersHorizontal } from 'lucide-react'
+import { Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/dashboard/page-header'
@@ -17,17 +17,27 @@ import {
   TableRow,
 } from '@/components/ui/data-table'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import { departments, students, years } from '@/lib/mock-data'
+import { departments, students as initialStudents, years, type Student } from '@/lib/mock-data'
 
 export default function StudentsPage() {
+  const [studentList, setStudentList] = useState<Student[]>(initialStudents)
   const [query, setQuery] = useState('')
   const [dept, setDept] = useState('all')
   const [year, setYear] = useState('all')
+  const [open, setOpen] = useState(false)
+
+  const [form, setForm] = useState({
+    id: '',
+    name: '',
+    department: departments[0],
+    year: years[0],
+  })
 
   const filtered = useMemo(() => {
-    return students.filter((s) => {
+    return studentList.filter((s) => {
       const matchesQuery =
         s.name.toLowerCase().includes(query.toLowerCase()) ||
         s.id.toLowerCase().includes(query.toLowerCase())
@@ -35,7 +45,31 @@ export default function StudentsPage() {
       const matchesYear = year === 'all' || s.year === year
       return matchesQuery && matchesDept && matchesYear
     })
-  }, [query, dept, year])
+  }, [query, dept, year, studentList])
+
+  function handleAddStudent(e: React.FormEvent) {
+    e.preventDefault()
+
+    const newStudent: Student = {
+      id: form.id.trim(),
+      name: form.name.trim(),
+      department: form.department,
+      year: form.year,
+      faceStatus: 'not-registered',
+      attendance: 0,
+    }
+
+    if (!newStudent.id || !newStudent.name) return
+
+    setStudentList((prev) => [newStudent, ...prev])
+    setForm({
+      id: '',
+      name: '',
+      department: departments[0],
+      year: years[0],
+    })
+    setOpen(false)
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,7 +77,7 @@ export default function StudentsPage() {
         title="Student Management"
         description="Search, filter, and manage all enrolled students."
         action={
-          <Button size="lg" className="gap-2">
+          <Button size="lg" className="gap-2" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             Add Student
           </Button>
@@ -62,6 +96,7 @@ export default function StudentsPage() {
                 className="pl-9"
               />
             </div>
+
             <div className="flex items-center gap-2 text-muted-foreground">
               <SlidersHorizontal className="hidden size-4 sm:block" />
               <Select
@@ -76,6 +111,7 @@ export default function StudentsPage() {
                   </option>
                 ))}
               </Select>
+
               <Select
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
@@ -103,6 +139,7 @@ export default function StudentsPage() {
                   <TableHead>Attendance %</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {filtered.map((student) => (
                   <TableRow key={student.id}>
@@ -139,6 +176,7 @@ export default function StudentsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
+
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
@@ -151,10 +189,94 @@ export default function StudentsPage() {
           </TableContainer>
 
           <p className="text-xs text-muted-foreground">
-            Showing {filtered.length} of {students.length} students
+            Showing {filtered.length} of {studentList.length} students
           </p>
         </CardContent>
       </Card>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div>
+                <h3 className="font-semibold">Add Student</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Add basic student details. Face registration can be done later.
+                </p>
+              </div>
+
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                <X className="size-4" />
+              </Button>
+            </div>
+
+            <form onSubmit={handleAddStudent} className="flex flex-col gap-4 p-5">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="student-id">Student ID</Label>
+                <Input
+                  id="student-id"
+                  placeholder="STU-1013"
+                  value={form.id}
+                  onChange={(e) => setForm((prev) => ({ ...prev, id: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="student-name">Full Name</Label>
+                <Input
+                  id="student-name"
+                  placeholder="Student name"
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="student-dept">Department</Label>
+                  <Select
+                    id="student-dept"
+                    value={form.department}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, department: e.target.value }))
+                    }
+                  >
+                    {departments.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="student-year">Year</Label>
+                  <Select
+                    id="student-year"
+                    value={form.year}
+                    onChange={(e) => setForm((prev) => ({ ...prev, year: e.target.value }))}
+                  >
+                    {years.map((y) => (
+                      <option key={y} value={y}>
+                        {y}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mt-2 flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Add Student</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
