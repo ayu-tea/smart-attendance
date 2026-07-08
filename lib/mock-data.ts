@@ -1,5 +1,5 @@
 export type FaceStatus = 'registered' | 'pending' | 'not-registered'
-export type AttendanceStatus = 'present' | 'absent' | 'late'
+export type AttendanceStatus = 'present' | 'absent'
 export type FacultyRole = 'admin' | 'faculty'
 
 export interface Student {

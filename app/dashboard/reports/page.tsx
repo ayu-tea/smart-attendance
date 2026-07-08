@@ -11,7 +11,6 @@ import {
 import { useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/dashboard/page-header'
-import { AttendanceStatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -40,7 +39,6 @@ interface ClassSummary {
   department: string
   present: number
   absent: number
-  late: number
   total: number
 }
 
@@ -89,7 +87,6 @@ function SummaryCard({
 export default function ReportsPage() {
   const [date, setDate] = useState('')
   const [dept, setDept] = useState('all')
-  const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
   const [view, setView] = useState<ReportView>('classes')
 
@@ -106,7 +103,6 @@ export default function ReportsPage() {
           department: record.department,
           present: 0,
           absent: 0,
-          late: 0,
           total: 0,
         })
       }
@@ -116,9 +112,11 @@ export default function ReportsPage() {
 
       summary.total += 1
 
-      if (record.status === 'present') summary.present += 1
-      if (record.status === 'absent') summary.absent += 1
-      if (record.status === 'late') summary.late += 1
+      if (record.status === 'present') {
+        summary.present += 1
+      } else {
+        summary.absent += 1
+      }
     })
 
     return Array.from(grouped.values()).sort((a, b) => b.date.localeCompare(a.date))
@@ -165,14 +163,18 @@ export default function ReportsPage() {
   function clearFilters() {
     setDate('')
     setDept('all')
-    setStatus('all')
+    setPage(1)
+  }
+
+  function changeView(nextView: ReportView) {
+    setView(nextView)
     setPage(1)
   }
 
   function exportReport() {
     const headers =
       view === 'classes'
-        ? ['Date', 'Department', 'Present', 'Absent', 'Late', 'Total']
+        ? ['Date', 'Department', 'Students Present', 'Students Absent', 'Total Students']
         : ['Student ID', 'Student Name', 'Department', 'Year', 'Attendance %', 'Face Status']
 
     const rows =
@@ -182,7 +184,6 @@ export default function ReportsPage() {
             record.department,
             record.present,
             record.absent,
-            record.late,
             record.total,
           ])
         : filteredLowAttendance.map((student) => [
@@ -217,12 +218,6 @@ export default function ReportsPage() {
     document.body.removeChild(link)
 
     URL.revokeObjectURL(url)
-  }
-
-  function changeView(nextView: ReportView) {
-    setView(nextView)
-    setStatus('all')
-    setPage(1)
   }
 
   return (
@@ -295,25 +290,6 @@ export default function ReportsPage() {
               </Select>
             </div>
 
-            {view === 'classes' && (
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="f-status">Status</Label>
-                <Select
-                  id="f-status"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value)
-                    resetToFirstPage()
-                  }}
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="present">Present</option>
-                  <option value="late">Late</option>
-                  <option value="absent">Absent</option>
-                </Select>
-              </div>
-            )}
-
             <div className="flex items-end">
               <Button variant="outline" size="lg" className="w-full" onClick={clearFilters}>
                 Clear Filters
@@ -330,8 +306,7 @@ export default function ReportsPage() {
                     <TableHead>Department</TableHead>
                     <TableHead>Students Present</TableHead>
                     <TableHead>Students Absent</TableHead>
-                    <TableHead className="hidden sm:table-cell">Late</TableHead>
-                    <TableHead className="hidden sm:table-cell">Total</TableHead>
+                    <TableHead className="hidden sm:table-cell">Total Students</TableHead>
                   </TableRow>
                 </TableHeader>
 
@@ -342,8 +317,7 @@ export default function ReportsPage() {
                       <TableCell className="font-medium">{record.department}</TableCell>
                       <TableCell>{record.present}</TableCell>
                       <TableCell>{record.absent}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{record.late}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground">
+                      <TableCell className="hidden text-muted-foreground sm:table-cell">
                         {record.total}
                       </TableCell>
                     </TableRow>
@@ -351,7 +325,7 @@ export default function ReportsPage() {
 
                   {filteredClasses.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
                         No class records match your filters.
                       </TableCell>
                     </TableRow>
