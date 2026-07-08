@@ -113,7 +113,7 @@ export const dashboardStats = {
 }
 
 export const monthlySummary = [
-  { label: 'Avg. Attendance', value: '89%', trend: '+3.2%' },
+  { label: 'Avg. Attendance', value: '88%', trend: '+3.2%' },
   { label: 'Classes Held', value: '124', trend: '+8' },
   { label: 'Perfect Attendance', value: '46', trend: '+5' },
   { label: 'Low Attendance', value: '12', trend: '-2' },
