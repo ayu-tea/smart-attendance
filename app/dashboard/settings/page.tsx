@@ -119,15 +119,15 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => setAttendanceOpen((value) => !value)}
                   className={cn(
-                    'relative h-7 w-13 shrink-0 rounded-full transition-colors',
+                    'relative h-8 w-14 shrink-0 rounded-full transition-colors',
                     attendanceOpen ? 'bg-primary' : 'bg-muted-foreground/35',
                   )}
                   aria-label="Toggle attendance acceptance"
                 >
                   <span
                     className={cn(
-                      'absolute top-1 size-5 rounded-full bg-background transition-transform',
-                      attendanceOpen ? 'translate-x-7' : 'translate-x-1',
+                      'absolute left-1 top-1 size-6 rounded-full bg-white shadow-sm transition-transform',
+                      attendanceOpen ? 'translate-x-6' : 'translate-x-0',
                     )}
                   />
                 </button>
