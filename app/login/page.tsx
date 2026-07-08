@@ -17,12 +17,12 @@ export default function LoginPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    // Mock auth — no real backend. Redirect to the dashboard.
+
     setTimeout(() => router.push('/dashboard'), 700)
   }
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to your admin or faculty account.">
+    <AuthShell title="Sign in" subtitle="Access your faculty attendance dashboard.">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
@@ -32,7 +32,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               required
-              placeholder="admin@institution.edu"
+              placeholder="faculty@institution.edu"
               className="pl-9"
               defaultValue="admin@institution.edu"
             />
@@ -52,7 +52,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               required
-              placeholder="••••••••"
+              placeholder="Enter password"
               className="pl-9"
               defaultValue="password"
             />
@@ -72,13 +72,6 @@ export default function LoginPage() {
           {loading ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-primary hover:underline">
-          Create one
-        </Link>
-      </p>
     </AuthShell>
   )
 }
