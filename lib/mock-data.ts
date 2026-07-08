@@ -1,5 +1,6 @@
 export type FaceStatus = 'registered' | 'pending' | 'not-registered'
 export type AttendanceStatus = 'present' | 'absent' | 'late'
+export type FacultyRole = 'admin' | 'faculty'
 
 export interface Student {
   id: string
@@ -19,6 +20,34 @@ export interface AttendanceRecord {
   time: string
   status: AttendanceStatus
 }
+
+export interface FacultyUser {
+  id: string
+  name: string
+  email: string
+  password: string
+  role: FacultyRole
+  department: string
+}
+
+export const facultyUsers: FacultyUser[] = [
+  {
+    id: 'FAC-001',
+    name: 'Dr. Ayutee',
+    email: 'ayu@gmail.com',
+    password: '5588',
+    role: 'faculty',
+    department: 'Computer Science',
+  },
+  {
+    id: 'ADM-001',
+    name: 'Admin User',
+    email: 'admin@institution.edu',
+    password: 'admin123',
+    role: 'admin',
+    department: 'Administration',
+  },
+]
 
 export const students: Student[] = [
   { id: 'STU-1001', name: 'Aarav Sharma', department: 'Computer Science', year: '3rd Year', faceStatus: 'registered', attendance: 94 },
@@ -59,7 +88,6 @@ export const reportRecords: AttendanceRecord[] = [
   { id: 'ATT-8906', studentId: 'STU-1005', studentName: 'Karan Mehta', department: 'Civil', date: '2026-07-06', time: '09:44 AM', status: 'late' },
 ]
 
-// Students used to simulate face-recognition matches on the Mark Attendance page.
 export const recognizableStudents = [
   { id: 'STU-1001', name: 'Aarav Sharma', department: 'Computer Science', year: '3rd Year' },
   { id: 'STU-1004', name: 'Ananya Iyer', department: 'Computer Science', year: '1st Year' },
